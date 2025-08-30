@@ -1,0 +1,79 @@
+[project]
+name = "FastAPIDefault"
+version = "0.1.0"
+description = "FastAPI Template Project"
+authors = [{ name = "Jahongir Hakimjonov", email = "jahongirhakimjonov@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alembic==1.15.2",
+    "asyncpg==0.30.0",
+    "fastapi==0.115.12",
+    "httpx==0.28.1",
+    "loguru==0.7.3",
+    "orjson==3.10.18",
+    "prometheus-client==0.22.0",
+    "pydantic-settings==2.9.1",
+    "pydantic==2.11.4",
+    "sentry_sdk[fastapi]==2.29.1",
+    "SQLAlchemy[asyncio]==2.0.41",
+    "uvicorn==0.34.2",
+    "yarl==1.20.0",
+]
+
+[dependency-groups]
+dev = ["fastapi[standard]", "deptry"]
+test = ["pytest", "pytest-cov", "pytest-mock", "anyio"]
+lint = ["ruff"]
+typecheck = ["mypy", "asyncpg-stubs"]
+docker = ["uvloop==0.21.0", "httptools==0.6.4"]
+
+[tool.uv]
+default-groups = ["dev", "test", "lint", "typecheck"]
+package = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["src/db/migrations"]
+
+[tool.ruff.lint]
+select = [
+    "B",    # flake8-bugbear
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "S",    # bandit
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
+    "FAST", # fastapi
+]
+ignore = [
+    "B008", # function-call-in-default-argument
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = ["S101"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+disallow_any_generics = false
+pretty = true
+show_error_codes = true
+implicit_reexport = true
+warn_unused_ignores = false
+warn_return_any = false
+namespace_packages = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore:.*unclosed.*:ResourceWarning",
+]
+
+[[tool.mypy.overrides]]
+module = "app,core.*"
+ignore_missing_imports = true
