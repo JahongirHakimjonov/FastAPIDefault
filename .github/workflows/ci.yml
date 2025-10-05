@@ -16,6 +16,8 @@ env:
   POSTGRES_USER: "test"
   POSTGRES_PASSWORD: "test"
   POSTGRES_HOST_AUTH_METHOD: "trust"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   ruff:
@@ -35,8 +37,7 @@ jobs:
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-
+          restore-keys: uv-
 
       - name: Install uv
         run: |
@@ -68,8 +69,7 @@ jobs:
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-
+          restore-keys: uv-
 
       - name: Install uv
         run: |
@@ -120,8 +120,7 @@ jobs:
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-
+          restore-keys: uv-
 
       - name: Install uv
         run: |
@@ -144,32 +143,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set REPO_LOWER
-        run: echo "REPO_LOWER=$(echo '${GITHUB_REPOSITORY}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
       - name: Install uv
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
           export PATH="$HOME/.local/bin:$PATH"
           uv tool install go-task-bin || true
-
-      - name: Extract project version
-        id: get_version
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          LATEST_TAG=$(uvx --from=toml-cli toml get --toml-path=pyproject.toml project.version || echo "unknown")
-          echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_ENV
-          echo "IMAGE_TAG_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
-          SAFE_BRANCH=$(echo "${GITHUB_REF_NAME:-${GITHUB_REF##*/}}" | tr '/' '-')
-          echo "IMAGE_TAG_BRANCH_SAFE=${SAFE_BRANCH}" >> $GITHUB_ENV
-
-      - name: Debug tags
-        run: |
-          echo "REPO_LOWER=${REPO_LOWER}"
-          echo "IMAGE_TAG_SHA=${IMAGE_TAG_SHA}"
-          echo "IMAGE_TAG_BRANCH_SAFE=${IMAGE_TAG_BRANCH_SAFE}"
-          echo "LATEST_TAG=${LATEST_TAG}"
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -181,24 +160,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull cache image
-        run: docker pull ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_BRANCH_SAFE }} || true
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_SHA }}
-            ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_BRANCH_SAFE }}
-            ghcr.io/${{ env.REPO_LOWER }}:${{ env.LATEST_TAG }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_BRANCH_SAFE }}
-          cache-to: type=inline
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Print pushed tags
         run: |
           echo "Pushed tags:"
-          echo " - ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_SHA }}"
-          echo " - ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_BRANCH_SAFE }}"
-          echo " - ghcr.io/${{ env.REPO_LOWER }}:${{ env.LATEST_TAG }}"
+          echo "${{ steps.meta.outputs.tags }}"
