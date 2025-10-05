@@ -42,7 +42,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(router=api_router, prefix="/api", tags=["API"])
+    app.include_router(router=api_router, prefix="/api")
     app.include_router(router=monitoring_router, tags=["Monitoring"])
 
     register_exception_handlers(app)

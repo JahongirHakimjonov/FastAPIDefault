@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         )
 
     app_title: str = "FastAPI Template Project"
-    app_name: str = "fastapi_template"
+    app_name: str = "fastapidefault"
     env: Literal["local", "test", "ci", "dev", "prod"] = "prod"
     root_path: str = ""
 
