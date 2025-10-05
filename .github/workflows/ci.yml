@@ -1,4 +1,4 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "**" ]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 env:
   PYTHON_VERSION: "3.11"
@@ -26,10 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set derived env (IMAGE_*, UV_CACHE_DIR)
+      - name: Set derived env
         run: |
           echo "IMAGE_PYTHON=python:${PYTHON_VERSION}-slim" >> $GITHUB_ENV
-          echo "IMAGE_UV=ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-bookworm-slim" >> $GITHUB_ENV
           echo "UV_CACHE_DIR=${UV_CACHE_DIR:-$HOME/.cache/uv}" >> $GITHUB_ENV
 
       - name: Cache uv
@@ -43,7 +46,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
-          export PATH="$HOME/.local/bin:$PATH"
           uv tool install go-task-bin || true
 
       - name: Run linter
@@ -58,12 +60,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set derived env
-        run: |
-          echo "IMAGE_PYTHON=python:${PYTHON_VERSION}-slim" >> $GITHUB_ENV
-          echo "IMAGE_UV=ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-bookworm-slim" >> $GITHUB_ENV
-          echo "UV_CACHE_DIR=${UV_CACHE_DIR:-$HOME/.cache/uv}" >> $GITHUB_ENV
-
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -75,7 +71,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
-          export PATH="$HOME/.local/bin:$PATH"
           uv tool install go-task-bin || true
 
       - name: Run typecheck
@@ -110,11 +105,6 @@ jobs:
             sleep 1
           done
 
-      - name: Set derived env
-        run: |
-          echo "IMAGE_PYTHON=python:${PYTHON_VERSION}-slim" >> $GITHUB_ENV
-          echo "UV_CACHE_DIR=${UV_CACHE_DIR:-$HOME/.cache/uv}" >> $GITHUB_ENV
-
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -126,7 +116,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
-          export PATH="$HOME/.local/bin:$PATH"
           uv tool install go-task-bin || true
 
       - name: Run tests
@@ -147,7 +136,6 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
-          export PATH="$HOME/.local/bin:$PATH"
           uv tool install go-task-bin || true
 
       - name: Setup Docker Buildx
@@ -168,6 +156,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -177,8 +166,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+          cache-to: type=inline
 
       - name: Print pushed tags
         run: |
-          echo "Pushed tags:"
+          echo "✅ Pushed image tags:"
           echo "${{ steps.meta.outputs.tags }}"
