@@ -1,5 +1,5 @@
 [project]
-name = "FastAPIDefault"
+name = "fastapidefault"
 version = "0.1.0"
 description = "FastAPI Template Project"
 authors = [{ name = "Jahongir Hakimjonov", email = "jahongirhakimjonov@gmail.com" }]
@@ -19,6 +19,7 @@ dependencies = [
     "SQLAlchemy[asyncio]==2.0.41",
     "uvicorn==0.34.2",
     "yarl==1.20.0",
+    "psycopg2-binary==2.9.9",
 ]
 
 [dependency-groups]
@@ -39,13 +40,13 @@ extend-exclude = ["src/db/migrations"]
 
 [tool.ruff.lint]
 select = [
-    "B",    # flake8-bugbear
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
-    "S",    # bandit
-    "UP",   # pyupgrade
-    "W",    # pycodestyle
+    "B", # flake8-bugbear
+    "E", # pycodestyle
+    "F", # pyflakes
+    "I", # isort
+    "S", # bandit
+    "UP", # pyupgrade
+    "W", # pycodestyle
     "FAST", # fastapi
 ]
 ignore = [
