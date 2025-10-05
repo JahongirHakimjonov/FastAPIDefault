@@ -7,7 +7,6 @@ on:
     branches: [ "**" ]
   workflow_dispatch:
 
-# only base primitive values here
 env:
   PYTHON_VERSION: "3.11"
   UV_VERSION: "0.7.2"
@@ -198,7 +197,7 @@ jobs:
       - name: Pull cache image (best effort)
         shell: bash
         run: |
-          docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }} || true
+          docker pull ghcr.io/${{ toLower(github.repository) }}:${{ github.ref_name }} || true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -206,16 +205,16 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG_SHA }}
-            ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG_BRANCH }}
-            ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_SHA }}
+            ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_BRANCH }}
+            ghcr.io/${{ toLower(github.repository) }}:${{ env.LATEST_TAG }}
+          cache-from: type=registry,ref=ghcr.io/${{ toLower(github.repository) }}:${{ github.ref_name }}
           cache-to: type=inline
 
       - name: Print pushed tags
         shell: bash
         run: |
           echo "Pushed tags:"
-          echo " - ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG_SHA }}"
-          echo " - ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG_BRANCH }}"
-          echo " - ghcr.io/${{ github.repository }}:${{ env.LATEST_TAG }}"
+          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_SHA }}"
+          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_BRANCH }}"
+          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.LATEST_TAG }}"
