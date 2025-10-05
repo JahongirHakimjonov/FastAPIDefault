@@ -1,4 +1,4 @@
-name: CI
+name: CI (uv + GitHub Actions)
 
 on:
   push:
@@ -165,6 +165,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # compute lowercase repository name once and expose as env
+      - name: Set REPO_LOWER (lowercased github repository)
+        shell: bash
+        run: |
+          echo "REPO_LOWER=$(echo '${GITHUB_REPOSITORY}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Install uv
         shell: bash
         run: |
@@ -197,7 +203,8 @@ jobs:
       - name: Pull cache image (best effort)
         shell: bash
         run: |
-          docker pull ghcr.io/${{ toLower(github.repository) }}:${{ github.ref_name }} || true
+          # use the lowercased repo env set earlier
+          docker pull ghcr.io/${REPO_LOWER}:${GITHUB_REF_NAME:-${GITHUB_REF##*/}} || true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
@@ -205,16 +212,16 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_SHA }}
-            ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_BRANCH }}
-            ghcr.io/${{ toLower(github.repository) }}:${{ env.LATEST_TAG }}
-          cache-from: type=registry,ref=ghcr.io/${{ toLower(github.repository) }}:${{ github.ref_name }}
+            ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_SHA }}
+            ghcr.io/${{ env.REPO_LOWER }}:${{ env.IMAGE_TAG_BRANCH }}
+            ghcr.io/${{ env.REPO_LOWER }}:${{ env.LATEST_TAG }}
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}:${{ github.ref_name }}
           cache-to: type=inline
 
       - name: Print pushed tags
         shell: bash
         run: |
           echo "Pushed tags:"
-          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_SHA }}"
-          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.IMAGE_TAG_BRANCH }}"
-          echo " - ghcr.io/${{ toLower(github.repository) }}:${{ env.LATEST_TAG }}"
+          echo " - ghcr.io/${REPO_LOWER}:${IMAGE_TAG_SHA}"
+          echo " - ghcr.io/${REPO_LOWER}:${IMAGE_TAG_BRANCH}"
+          echo " - ghcr.io/${REPO_LOWER}:${LATEST_TAG}"
