@@ -192,7 +192,7 @@ jobs:
           IMAGE_TAG_BRANCH_SAFE="$(echo "$IMAGE_TAG_BRANCH_SAFE" | sed -E 's/[^a-z0-9._-]+/-/g' | sed -E 's/^-+|-+$//g')"
           echo "IMAGE_TAG_BRANCH_SAFE=${IMAGE_TAG_BRANCH_SAFE}" >> $GITHUB_ENV
 
-      - name: Debug: show resolved tag variables
+      - name: show resolved tag variables
         shell: bash
         run: |
           echo "REPO_LOWER=${REPO_LOWER}"
